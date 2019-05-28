@@ -1,0 +1,51 @@
+install.packages("tidyverse")
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("rworldmap")
+install.packages("rworldxtra")
+#rworldxtra only needed for high-resolution map
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(rworldmap)
+library(rworldxtra)
+read_data <- read_csv("historical_oil_data.csv")
+oil_production <- read_data %>%
+  gather(`1900`:`2014`, key = "year", value = "production")
+yearly_production <- oil_production %>%
+  group_by(year) %>%
+  summarise(total = sum(production, na.rm = TRUE))
+yearly_production_lookup <- oil_production
+yearly_production_lookup[]<- yearly_production$total[match(unlist(oil_production),yearly_production$year)]
+oil_production_expanded <- add_column(oil_production, yearly_total = yearly_production_lookup$year)
+oil_production_expanded2 <- mutate (oil_production_expanded, country_share_annual_production = production / yearly_total)
+#looping the x and y coords over the core data frame
+read_coords <- read_csv("centroidsdatacoords.csv")
+xcoord_loop <- oil_production_expanded2
+xcoord_loop[]<- read_coords$x[match(unlist(oil_production_expanded2),read_coords$country_name)] 
+ycoord_loop <- oil_production_expanded2
+ycoord_loop[] <- read_coords$y[match(unlist(oil_production_expanded2),read_coords$country_name)] 
+oil_production_expanded3 <- add_column(oil_production_expanded2, xcoord = xcoord_loop$Country)
+oil_production_expanded4 <- add_column(oil_production_expanded3, ycoord = ycoord_loop$Country)
+#Calculating the expanded weighted contibutions to production center of gravity
+oil_production_expanded5 <- mutate(oil_production_expanded4, weighted_x = country_share_annual_production * xcoord)
+oil_production_expanded6 <- mutate(oil_production_expanded5, weighted_y = country_share_annual_production * ycoord)
+#Condensing the expanded weighted contributions into a single x and y coord for each year
+yearly_gravity <- oil_production_expanded6 %>%
+  group_by(year) %>%
+  summarise(xgravity = sum(weighted_x, na.rm = TRUE), ygravity = sum(weighted_y, na.rm = TRUE)) %>%
+  add_column(yearly_production$total)
+#Calling the base map and building the plot color pallette
+newmap <- getMap(resolution = "high")
+rbPal <- colorRampPalette(c("white","#00ADFB"))
+yearly_gravity$color <- rbPal(115)
+#Plotting all years
+plot(newmap, xlim = c(-90, 30), ylim = c(0,((9/16)*120)), asp = 1, col = "#0FAA91", bg = "#0095AB", border ="white")
+lines(yearly_gravity$xgravity, yearly_gravity$ygravity, col = "#004165") 
+points(yearly_gravity$xgravity, yearly_gravity$ygravity, col = yearly_gravity$color, lwd = log(yearly_gravity$`yearly_production$total`)*2, cex = .6, pch = 21)
+text(x=yearly_gravity$xgravity,y=yearly_gravity$ygravity,labels=yearly_gravity$year, cex = 0.7,pos = 1, col = "white")
+#Plotting just 1971+
+plot(newmap, xlim = c(10,20), ylim = c(30,40), asp = 1, col = "#0FAA91", bg = "#0095AB", border ="white")
+points(yearly_gravity$xgravity, yearly_gravity$ygravity, col = yearly_gravity$color, lwd = log(yearly_gravity$`yearly_production$total`)*2, cex = .6, pch = 21)
+lines(yearly_gravity$xgravity, yearly_gravity$ygravity, col = "red") 
+text(x=yearly_gravity$xgravity,y=yearly_gravity$ygravity,labels=yearly_gravity$year, cex = 0.7,pos = 1, col = "white")
