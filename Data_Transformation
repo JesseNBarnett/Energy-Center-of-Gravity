@@ -1,0 +1,71 @@
+install.packages("tidyverse")
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("rworldmap")
+install.packages("rworldxtra")
+#rworldxtra only needed for high-resolution map
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(rworldmap)
+library(rworldxtra)
+#LoadData
+read_data <- read_csv("CoalPreTransform.csv")
+coal_production <- read_data %>%
+  gather(`1900`:`2014`, key = "year", value = "coal_production") %>%
+names(coal_production)[1]<-"country"
+write.csv(coal_production,"CoalPostTransform.csv")
+gas_data <- read_csv("GasPreTransform.csv")
+gas_production <- gas_data %>%
+  gather(`1900`:`2014`, key = "year", value = "gas_production")
+write.csv(gas_production,"GasPostTransform.csv")
+hydro_data <- read_csv("HydroPreTransform.csv")
+hydro_production <- hydro_data %>%
+  gather(`1900`:`2014`,key = "year", value = "hydro_production")
+write.csv(hydro_production,"HydroPostTransform.csv")
+nuclear_data <- read_csv("NuclearPreTransform.csv")
+nuclear_production <- nuclear_data %>%
+  gather(`1956`:`2014`, key = "year", value = "nuclear_production")
+write.csv(nuclear_production, "NuclearPostTransform.csv")
+oil_data <- read_csv("OilPreTransform.csv")
+oil_production <- oil_data %>%
+  gather(`1900`:`2014`,key = "year", value = "oil_production")
+write.csv(oil_production,"OilPostTransform.csv")
+biodiesel_data <- read_csv("BiodieselPreTransform.csv")
+biodielse_production <- biodiesel_data %>%
+  gather(`2000`:`2014`,key = "year", value = "biodiesel_production")
+write.csv(biodielse_production,"BiodieselPostTransform.csv")
+fuelethanol_data <- read_csv("FuelethanolPreTransform.csv")
+fuelethanol_production <- fuelethanol_data %>%
+  gather(`1980`:`2014`, key = "year", value = "fuel_ethanol_production")
+names(fuelethanol_production)[1]<-"country"
+write.csv(fuelethanol_production,"FuelethanolPostTransform.csv")
+wind_data <- read_csv("WindPreTransform.csv")
+wind_production <- wind_data %>%
+  gather(`1983`:`2014`, key = "year", value = "wind_production")
+write.csv(wind_production, "WindPostTransform.csv")
+solar_tidal_wave_data <- read_csv("SolartidalwavePreTransform.csv")
+solar_tidal_wave_production <- solar_tidal_wave_data %>%
+  gather(`1980`:`2014`,key = "year", value = "solar_tidal_wave_production")
+write.csv(solar_tidal_wave_production, "SolartidalwavePostTransform.csv")
+geothermal_data <- read_csv("GeothermalPreTransform.csv")
+geothermal_production <- geothermal_data %>%
+  gather(`1916`:`2014`, key = "year", value = "geothermal_production")
+names(geothermal_production)[1]<-"country"
+write.csv(geothermal_production, "GeothermalPostTransform.csv")
+biomass_waste_data <- read_csv("BiomasswastePreTransform.csv")
+biomass_waste_production <- biomass_waste_data %>%
+  gather(`1980`:`2014`, key = "year", value = "biomass_waste_production")
+write.csv(biomass_waste_production,"BiomasswastePostTransform.csv")
+die_waste <- full_join (biodielse_production,biomass_waste_production,coal_production)
+production_data <- full_join (oil_production,gas_production) %>%
+  full_join(.,coal_production) %>%
+  full_join(.,nuclear_production) %>%
+  full_join(.,hydro_production) %>%
+  full_join(.,biodielse_production) %>%
+  full_join(.,fuelethanol_production) %>%
+  full_join(.,wind_production) %>%
+  full_join(.,solar_tidal_wave_production) %>%
+  full_join(.,geothermal_production) %>%
+  full_join(.,biomass_waste_production)
+write.csv(production_data,"production_data_raw.csv")
